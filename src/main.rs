@@ -10,9 +10,23 @@ struct Ball {
     color: Color
 }
 
+struct Boundary {
+    pos: Vec3,
+    size: Vec3
+}
+
+impl Boundary {
+    fn new(pos: Vec3, size: Vec3) -> Boundary {
+        Boundary {
+            pos,
+            size
+        }
+    }
+}
+
 fn conf() -> Conf {
     Conf {
-        window_title: String::from("Macroquad"),
+        window_title: String::from("Balls but 3D"),
         window_width: 1260,
         window_height: 768,
         fullscreen: false,
@@ -49,7 +63,7 @@ async fn main() {
     loop {
         let delta = get_frame_time();
 
-        if is_key_pressed(KeyCode::Escape) {
+        if is_key_pressed(KeyCode::Q) || is_key_pressed(KeyCode::Escape) {
             break;
         }
         if is_key_pressed(KeyCode::Tab) {
@@ -115,7 +129,19 @@ async fn main() {
 
         draw_grid(20, 1., BLACK, GRAY);
 
-        draw_cube(Vec3::new(-10.0, 2.5, 0.0), Vec3::new(0.1, 5.0, 20.0), None, GOLD);
+        // Walls + Floor + Roof
+        let bound_arr = [
+            Boundary::new(Vec3::new(-10.0, -5., 0.0), Vec3::new(0.1, 20.0, 20.0)),
+            Boundary::new(Vec3::new(10.0, -5., 0.0), Vec3::new(0.1, 20.0, 20.0)),
+            Boundary::new(Vec3::new(0.0, -5., -10.0), Vec3::new(20.0, 20.0, 0.1)),
+            Boundary::new(Vec3::new(0.0, -5., 10.0), Vec3::new(20.0, 20.0, 0.1)),
+            Boundary::new(Vec3::new(0.0, 0.1, 0.0), Vec3::new(20.0, 0.1, 20.0)),
+            Boundary::new(Vec3::new(0.0, 5.0, 0.0), Vec3::new(20.0, 0.1, 20.0))
+        ];
+        for element in bound_arr {
+            draw_cube(element.pos, element.size, None, GRAY);
+            draw_cube_wires(element.pos, element.size, BLACK)
+        }
 
         draw_cube_wires(vec3(0., 1., -6.), vec3(2., 2., 2.), GREEN);
         draw_cube_wires(vec3(0., 1., 6.), vec3(2., 2., 2.), BLUE);
