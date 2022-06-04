@@ -1,5 +1,8 @@
-use macroquad::prelude::*;
+use macroquad::{prelude::*, miniquad::gl::GL_FRAGMENT_SHADER};
 use glam::vec3;
+use shaders::{FRAGMENT_SHADER, VERTEX_SHADER};
+
+mod shaders;
 
 const MOVE_SPEED: f32 = 0.1;
 const LOOK_SPEED: f32 = 0.1;
@@ -7,7 +10,14 @@ const LOOK_SPEED: f32 = 0.1;
 struct Ball {
     pos: Vec3,
     vel : Vec3,
+    radius: f32,
     color: Color
+}
+
+impl Ball {
+    fn new(pos: Vec3, vel: Vec3, radius: f32, color: Color) -> Ball {
+        Ball { pos, vel, radius, color }
+    }
 }
 
 struct Boundary {
@@ -59,6 +69,36 @@ async fn main() {
     let mut grabbed = true;
     set_cursor_grab(grabbed);
     show_mouse(false);
+
+    // Walls + Floor + Roof
+    let bound_arr = [
+        Boundary::new(vec3(-10.0, -0., 0.0), vec3(0.1, 20.0, 20.0)),
+        Boundary::new(vec3(10.0, -0., 0.0), vec3(0.1, 20.0, 20.0)),
+        Boundary::new(vec3(0.0, -0., -10.0), vec3(20.0, 20.0, 0.1)),
+        Boundary::new(vec3(0.0, 0., 10.0), vec3(20.0, 20.0, 0.1)),
+        Boundary::new(vec3(0.0, -10., 0.0), vec3(20.0, 0.1, 20.0)),
+        Boundary::new(vec3(0.0, 10., 0.0), vec3(20.0, 0.1, 20.0))
+    ];
+    let mut ball_vec: Vec<Ball> = vec![
+        Ball::new(vec3(0., 0., 0.), vec3(0., 0., 0.), 0.5, YELLOW)
+    ];
+
+    let mut fragment_shader = FRAGMENT_SHADER.to_string();
+    let mut vertex_shader = VERTEX_SHADER.to_string();
+    let pipeline_params = PipelineParams {
+        depth_write: true,
+        depth_test: Comparison::LessOrEqual,
+        ..Default::default()
+    };
+    let mut material = load_material(
+        &vertex_shader,
+        &fragment_shader,
+        MaterialParams {
+            pipeline_params,
+            ..Default::default()
+        },
+    )
+    .unwrap();
 
     loop {
         let delta = get_frame_time();
@@ -118,8 +158,9 @@ async fn main() {
 
         clear_background(LIGHTGRAY);
 
-        // Going 3d!
+        gl_use_default_material();
 
+        // 3D
         set_camera(&Camera3D {
             position,
             up,
@@ -129,43 +170,16 @@ async fn main() {
 
         draw_grid(20, 1., BLACK, GRAY);
 
-        // Walls + Floor + Roof
-        let bound_arr = [
-            Boundary::new(Vec3::new(-10.0, -5., 0.0), Vec3::new(0.1, 20.0, 20.0)),
-            Boundary::new(Vec3::new(10.0, -5., 0.0), Vec3::new(0.1, 20.0, 20.0)),
-            Boundary::new(Vec3::new(0.0, -5., -10.0), Vec3::new(20.0, 20.0, 0.1)),
-            Boundary::new(Vec3::new(0.0, -5., 10.0), Vec3::new(20.0, 20.0, 0.1)),
-            Boundary::new(Vec3::new(0.0, 0.1, 0.0), Vec3::new(20.0, 0.1, 20.0)),
-            Boundary::new(Vec3::new(0.0, 5.0, 0.0), Vec3::new(20.0, 0.1, 20.0))
-        ];
-        for element in bound_arr {
-            draw_cube(element.pos, element.size, None, GRAY);
-            draw_cube_wires(element.pos, element.size, BLACK)
+        for element in &bound_arr {
+            draw_cube(element.pos, element.size, None, BLACK);
+            draw_cube_wires(element.pos, element.size, GREEN)
+        }
+        for item in &ball_vec {
+            draw_sphere(item.pos, item.radius, None, item.color);
         }
 
-        draw_cube_wires(vec3(0., 1., -6.), vec3(2., 2., 2.), GREEN);
-        draw_cube_wires(vec3(0., 1., 6.), vec3(2., 2., 2.), BLUE);
-        draw_cube_wires(vec3(2., 1., 2.), vec3(2., 2., 2.), RED);
-
         // Back to screen space, render some text
-
         set_default_camera();
-        draw_text("First Person Camera", 10.0, 20.0, 30.0, BLACK);
-
-        draw_text(
-            format!("X: {} Y: {}", mouse_position.x, mouse_position.y).as_str(),
-            10.0,
-            48.0 + 18.0,
-            30.0,
-            BLACK,
-        );
-        draw_text(
-            format!("Press <TAB> to toggle mouse grab: {}", grabbed).as_str(),
-            10.0,
-            48.0 + 42.0,
-            30.0,
-            BLACK,
-        );
 
         next_frame().await
     }
