@@ -18,6 +18,20 @@ impl Ball {
     fn new(pos: Vec3, vel: Vec3, radius: f32, color: Color) -> Ball {
         Ball { pos, vel, radius, color }
     }
+
+    fn update(&mut self) {
+        self.pos += self.vel;
+
+        if self.pos.x > 10. - self.radius || self.pos.x < -10. + self.radius {
+            self.vel.x *= -1.;
+        }
+        if self.pos.y > 10. - self.radius || self.pos.y < -10. + self.radius {
+            self.vel.y *= -1.;
+        }
+        if self.pos.z > 10. - self.radius || self.pos.z < -10. + self.radius {
+            self.vel.z *= -1.;
+        }
+    }
 }
 
 struct Boundary {
@@ -80,7 +94,7 @@ async fn main() {
         Boundary::new(vec3(0.0, 10., 0.0), vec3(20.0, 0.1, 20.0))
     ];
     let mut ball_vec: Vec<Ball> = vec![
-        Ball::new(vec3(0., 0., 0.), vec3(0., 0., 0.), 0.5, YELLOW)
+        Ball::new(vec3(0., 0., 0.), vec3(0.1, 0.2, 0.3), 0.5, YELLOW)
     ];
 
     let mut fragment_shader = FRAGMENT_SHADER.to_string();
@@ -174,7 +188,8 @@ async fn main() {
             draw_cube(element.pos, element.size, None, BLACK);
             draw_cube_wires(element.pos, element.size, GREEN)
         }
-        for item in &ball_vec {
+        for item in &mut ball_vec {
+            item.update();
             draw_sphere(item.pos, item.radius, None, item.color);
         }
 
