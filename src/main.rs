@@ -13,6 +13,7 @@ const MOVE_SPEED: f32 = 0.1;
 const LOOK_SPEED: f32 = 0.1;
 const COLOR_ARR: [Color; 3] = [GREEN, RED, YELLOW];
 
+#[derive(Clone)]
 struct Ball {
     pos: Vec3,
     vel : Vec3,
@@ -67,6 +68,23 @@ fn conf() -> Conf {
 fn gen_random_vector(start: f32, end: f32) -> Vec3 {
     let get_rand = || gen_range(start, end);
     return vec3(get_rand(), get_rand(), get_rand());
+}
+
+fn collision(vec: &mut Vec<Ball>) {
+    for i in 0..vec.len() {
+        for j in 0..vec.len() {
+            if i != j {
+                let dist = ((vec[i].pos.x - vec[j].pos.x).powf(2.) + (vec[i].pos.y - vec[j].pos.y).powf(2.) + (vec[i].pos.z - vec[j].pos.z).powf(2.)).sqrt();
+                if dist < vec[i].radius + vec[j].radius {
+                    println!("Collision!");
+
+                    let temp = vec[i].vel.clone();
+                    vec[i].vel = vec[j].vel;
+                    vec[j].vel = temp;
+                }
+            }
+        }
+    }
 }
 
 #[macroquad::main(conf)]
@@ -196,6 +214,8 @@ async fn main() {
         if x >= bounds || x <= -bounds {
             switch = !switch;
         }
+
+        collision(&mut ball_vec);
 
         clear_background(LIGHTGRAY);
 
