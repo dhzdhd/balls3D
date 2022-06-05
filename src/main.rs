@@ -1,13 +1,11 @@
-use macroquad::{prelude::*, rand::gen_range, ui::StyleBuilder};
+use macroquad::{prelude::*, rand::gen_range};
 use glam::vec3;
-use shaders::{FRAGMENT_SHADER, VERTEX_SHADER};
+use balls3D::shaders::{FRAGMENT_SHADER, VERTEX_SHADER};
 use macroquad::ui::{
     hash, root_ui,
     widgets::{self, Group},
     Drag, Ui,
 };
-
-mod shaders;
 
 const MOVE_SPEED: f32 = 0.1;
 const LOOK_SPEED: f32 = 0.1;
