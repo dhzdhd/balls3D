@@ -1,11 +1,17 @@
-use macroquad::{prelude::*, miniquad::gl::GL_FRAGMENT_SHADER};
+use macroquad::{prelude::*, rand::gen_range, ui::StyleBuilder};
 use glam::vec3;
 use shaders::{FRAGMENT_SHADER, VERTEX_SHADER};
+use macroquad::ui::{
+    hash, root_ui,
+    widgets::{self, Group},
+    Drag, Ui,
+};
 
 mod shaders;
 
 const MOVE_SPEED: f32 = 0.1;
 const LOOK_SPEED: f32 = 0.1;
+const COLOR_ARR: [Color; 3] = [GREEN, RED, YELLOW];
 
 struct Ball {
     pos: Vec3,
@@ -15,8 +21,8 @@ struct Ball {
 }
 
 impl Ball {
-    fn new(pos: Vec3, vel: Vec3, radius: f32, color: Color) -> Ball {
-        Ball { pos, vel, radius, color }
+    fn new(pos: Vec3, vel: Vec3, radius: f32) -> Ball {
+        Ball { pos, vel, radius, color: COLOR_ARR[gen_range(0, COLOR_ARR.len())] }
     }
 
     fn update(&mut self) {
@@ -58,6 +64,11 @@ fn conf() -> Conf {
     }
 }
 
+fn gen_random_vector(start: f32, end: f32) -> Vec3 {
+    let get_rand = || gen_range(start, end);
+    return vec3(get_rand(), get_rand(), get_rand());
+}
+
 #[macroquad::main(conf)]
 async fn main() {
     let mut x = 0.0;
@@ -94,8 +105,11 @@ async fn main() {
         Boundary::new(vec3(0.0, 10., 0.0), vec3(20.0, 0.1, 20.0))
     ];
     let mut ball_vec: Vec<Ball> = vec![
-        Ball::new(vec3(0., 0., 0.), vec3(0.1, 0.2, 0.3), 0.5, YELLOW)
+        Ball::new(vec3(0., 0., 0.), gen_random_vector(-0.3, 0.3), 0.5)
     ];
+
+    let mut wall_color = BLANK;
+
 
     let mut fragment_shader = FRAGMENT_SHADER.to_string();
     let mut vertex_shader = VERTEX_SHADER.to_string();
@@ -125,6 +139,13 @@ async fn main() {
             set_cursor_grab(grabbed);
             show_mouse(!grabbed);
         }
+        if is_key_pressed(KeyCode::C) {
+            if wall_color == BLACK {
+                wall_color = BLANK;
+            } else {
+                wall_color = BLACK;
+            }
+        }
 
         if is_key_down(KeyCode::W) {
             position += front * MOVE_SPEED;
@@ -143,6 +164,12 @@ async fn main() {
         }
         if is_key_down(KeyCode::LeftControl) {
             position.y -= MOVE_SPEED;
+        }
+        if is_mouse_button_pressed(MouseButton::Left) {
+            ball_vec.extend([Ball::new(vec3(0., 0., 0.), gen_random_vector(-0.3, 0.3), 0.5)]);
+        }
+        if is_mouse_button_pressed(MouseButton::Right) {
+            ball_vec.pop();
         }
 
         let mouse_position: Vec2 = mouse_position().into();
@@ -172,6 +199,15 @@ async fn main() {
 
         clear_background(LIGHTGRAY);
 
+        // UI
+        // widgets::Window::new(hash!(), vec2(600., 200.), vec2(120., 200.))
+        // .ui(&mut *root_ui(), |ui| {
+        //     ui.label(Vec2::new(10., 10.), &format!("Item N {}", "e"));
+        //     if ui.button(Vec2::new(260., 55.), "buy") {
+        //         println!("KEK");
+        //     }
+        // });
+
         gl_use_default_material();
 
         // 3D
@@ -184,9 +220,9 @@ async fn main() {
 
         draw_grid(20, 1., BLACK, GRAY);
 
-        for element in &bound_arr {
-            draw_cube(element.pos, element.size, None, BLACK);
-            draw_cube_wires(element.pos, element.size, GREEN)
+        for item in &bound_arr {
+            draw_cube(item.pos, item.size, None, wall_color);
+            draw_cube_wires(item.pos, item.size, GREEN)
         }
         for item in &mut ball_vec {
             item.update();
