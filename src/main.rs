@@ -1,3 +1,5 @@
+use std::ops::Mul;
+
 use macroquad::{prelude::*, rand::gen_range};
 use glam::vec3;
 use balls3D::shaders::{FRAGMENT_SHADER, VERTEX_SHADER};
@@ -121,7 +123,7 @@ async fn main() {
         Boundary::new(vec3(0.0, 10., 0.0), vec3(20.0, 0.1, 20.0))
     ];
     let mut ball_vec: Vec<Ball> = vec![
-        Ball::new(vec3(0., 0., 0.), gen_random_vector(-0.3, 0.3), 0.5)
+        Ball::new(vec3(0., 0., 0.), gen_random_vector(-0.1, 0.1), 0.5)
     ];
 
     let mut wall_color = BLANK;
@@ -157,7 +159,7 @@ async fn main() {
         }
         if is_key_pressed(KeyCode::C) {
             if wall_color == BLACK {
-                wall_color = BLANK;
+                wall_color = Color::from_rgba(0, 0, 0, 0);
             } else {
                 wall_color = BLACK;
             }
@@ -245,6 +247,8 @@ async fn main() {
         for item in &mut ball_vec {
             item.update();
             draw_sphere(item.pos, item.radius, None, item.color);
+            let unit = (item.pos - item.vel.normalize()); //.mul(vec3(-2., -2., -2.));
+            draw_line_3d(item.pos, unit, item.color);
         }
 
         // Back to screen space, render some text
