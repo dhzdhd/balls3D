@@ -1,29 +1,36 @@
 use std::ops::Mul;
 
-use macroquad::{prelude::*, rand::gen_range};
-use glam::vec3;
 use balls3D::shaders::{FRAGMENT_SHADER, VERTEX_SHADER};
+use glam::vec3;
 use macroquad::ui::{
     hash, root_ui,
     widgets::{self, Group},
     Drag, Ui,
 };
+use macroquad::{prelude::*, rand::gen_range};
 
 const MOVE_SPEED: f32 = 0.1;
 const LOOK_SPEED: f32 = 0.1;
-const COLOR_ARR: [Color; 3] = [GREEN, RED, YELLOW];
+const COLOR_ARR: [Color; 10] = [
+    GREEN, RED, YELLOW, PINK, PURPLE, ORANGE, BLUE, DARKBLUE, DARKGREEN, DARKPURPLE,
+];
 
 #[derive(Clone)]
 struct Ball {
     pos: Vec3,
-    vel : Vec3,
+    vel: Vec3,
     radius: f32,
-    color: Color
+    color: Color,
 }
 
 impl Ball {
     fn new(pos: Vec3, vel: Vec3, radius: f32) -> Ball {
-        Ball { pos, vel, radius, color: COLOR_ARR[gen_range(0, COLOR_ARR.len())] }
+        Ball {
+            pos,
+            vel,
+            radius,
+            color: COLOR_ARR[gen_range(0, COLOR_ARR.len())],
+        }
     }
 
     fn update(&mut self) {
@@ -43,15 +50,12 @@ impl Ball {
 
 struct Boundary {
     pos: Vec3,
-    size: Vec3
+    size: Vec3,
 }
 
 impl Boundary {
     fn new(pos: Vec3, size: Vec3) -> Boundary {
-        Boundary {
-            pos,
-            size
-        }
+        Boundary { pos, size }
     }
 }
 
@@ -74,9 +78,12 @@ fn collision(vec: &mut Vec<Ball>) {
     for i in 0..vec.len() {
         for j in 0..vec.len() {
             if i != j {
-                let dist = ((vec[i].pos.x - vec[j].pos.x).powf(2.) + (vec[i].pos.y - vec[j].pos.y).powf(2.) + (vec[i].pos.z - vec[j].pos.z).powf(2.)).sqrt();
+                let dist = ((vec[i].pos.x - vec[j].pos.x).powf(2.)
+                    + (vec[i].pos.y - vec[j].pos.y).powf(2.)
+                    + (vec[i].pos.z - vec[j].pos.z).powf(2.))
+                .sqrt();
                 if dist < vec[i].radius + vec[j].radius {
-                    println!("Collision!");
+                    println!("Collision! {:?} {:?}", vec[i].vel, vec[j].vel);
 
                     let temp = vec[i].vel.clone();
                     vec[i].vel = vec[j].vel;
@@ -120,14 +127,15 @@ async fn main() {
         Boundary::new(vec3(0.0, -0., -10.0), vec3(20.0, 20.0, 0.1)),
         Boundary::new(vec3(0.0, 0., 10.0), vec3(20.0, 20.0, 0.1)),
         Boundary::new(vec3(0.0, -10., 0.0), vec3(20.0, 0.1, 20.0)),
-        Boundary::new(vec3(0.0, 10., 0.0), vec3(20.0, 0.1, 20.0))
+        Boundary::new(vec3(0.0, 10., 0.0), vec3(20.0, 0.1, 20.0)),
     ];
-    let mut ball_vec: Vec<Ball> = vec![
-        Ball::new(vec3(0., 0., 0.), gen_random_vector(-0.1, 0.1), 0.5)
-    ];
+    let mut ball_vec: Vec<Ball> = vec![Ball::new(
+        vec3(0., 0., 0.),
+        gen_random_vector(-0.1, 0.1),
+        0.5,
+    )];
 
-    let mut wall_color = BLANK;
-
+    let mut wall_color = BLACK;
 
     let mut fragment_shader = FRAGMENT_SHADER.to_string();
     let mut vertex_shader = VERTEX_SHADER.to_string();
@@ -184,7 +192,11 @@ async fn main() {
             position.y -= MOVE_SPEED;
         }
         if is_mouse_button_pressed(MouseButton::Left) {
-            ball_vec.extend([Ball::new(vec3(0., 0., 0.), gen_random_vector(-0.3, 0.3), 0.5)]);
+            ball_vec.extend([Ball::new(
+                vec3(0., 0., 0.),
+                gen_random_vector(-0.1, 0.1),
+                0.5,
+            )]);
         }
         if is_mouse_button_pressed(MouseButton::Right) {
             ball_vec.pop();
@@ -247,7 +259,7 @@ async fn main() {
         for item in &mut ball_vec {
             item.update();
             draw_sphere(item.pos, item.radius, None, item.color);
-            let unit = (item.pos - item.vel.normalize()); //.mul(vec3(-2., -2., -2.));
+            let unit = item.pos - item.vel.normalize(); //* */.mul(vec3(-2., -2., -2.));
             draw_line_3d(item.pos, unit, item.color);
         }
 
